@@ -1,0 +1,6 @@
+@import url("app_launcher.css");
+
+* {
+    all: unset;
+    font-family: "JetBrainsMonoNL Nerd Font", sans-serif;
+}
