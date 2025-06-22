@@ -1,0 +1,13 @@
+[project]
+name = "ashell"
+version = "0.1.0"
+description = "Set of widgets made with Fabric by ash1ra"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fabric",
+    "pygobject-stubs>=2.13.0",
+]
+
+[tool.uv.sources]
+fabric = { git = "https://github.com/Fabric-Development/fabric.git" }
