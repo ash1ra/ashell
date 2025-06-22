@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     app_launcher = AppLauncher()
 
-    app = Application()
+    app = Application("main", app_launcher)
 
     apply_stylesheet()
     app.run()

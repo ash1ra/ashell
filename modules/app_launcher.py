@@ -28,18 +28,18 @@ class AppLauncher(WaylandWindow):
         self._arranger_handler: int = 0
         self._apps_list = get_desktop_applications()
 
-        self.viewport = Box(orientation="vertical")
+        self.apps_wrapper = Box(orientation="vertical")
         self.search_entry = Entry(
             placeholder="Search for apps...",
             h_expand=True,
             name="app-launcher-search-entry",
-            notify_text=lambda entry, *_: self.arrange_viewport(entry.get_text()),
+            notify_text=lambda entry, *_: self.arrange_apps_wrapper(entry.get_text()),
             on_key_press_event=self.on_key_press,
         )
         self.scrolled_window = ScrolledWindow(
             min_content_size=(600, 320),
             max_content_size=(280 * 2, 320),
-            child=self.viewport,
+            child=self.apps_wrapper,
             name="app-launcher-scrolled-window",
         )
 
@@ -55,10 +55,10 @@ class AppLauncher(WaylandWindow):
 
         self.show_all()
 
-    def arrange_viewport(self, query: str = ""):
+    def arrange_apps_wrapper(self, query: str = ""):
         remove_handler(self._arranger_handler) if self._arranger_handler else None
 
-        self.viewport.children = []
+        self.apps_wrapper.children = []
 
         filtered_apps_iter = []
         for app in self._apps_list:
@@ -70,21 +70,21 @@ class AppLauncher(WaylandWindow):
                 filtered_apps_iter.append(app)
 
         self._arranger_handler = idle_add(
-            lambda *args: self.add_next_application(*args),
+            lambda *args: self.add_next_app(*args),
             iter(filtered_apps_iter),
             pin=True,
         )
 
         return False
 
-    def add_next_application(self, apps_iter: Iterator[DesktopApp]):
+    def add_next_app(self, apps_iter: Iterator[DesktopApp]):
         if not (app := next(apps_iter, None)):
             return False
 
-        self.viewport.add(self.bake_application_slot(app))
+        self.apps_wrapper.add(self.create_app_slot(app))
         return True
 
-    def bake_application_slot(self, app: DesktopApp, **kwargs) -> Button:
+    def create_app_slot(self, app: DesktopApp, **kwargs) -> Button:
         return Button(
             child=Label(label=app.display_name or "No name"),
             on_clicked=lambda *_: (app.launch(), self.application.quit()),
