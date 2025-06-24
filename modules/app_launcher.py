@@ -87,13 +87,17 @@ class AppLauncher(WaylandWindow):
     def create_app_slot(self, app: DesktopApp, **kwargs) -> Button:
         return Button(
             child=Label(label=app.display_name or "No name"),
-            on_clicked=lambda *_: (app.launch(), self.application.quit()),
+            on_clicked=lambda *_: (app.launch(), self.toggle()),
             **kwargs,
         )
 
     def on_key_press(self, _, event):
         if event.keyval == Gdk.KEY_Escape:
-            self.application.quit()
+            self.toggle()
+
+    def toggle(self):
+        self._apps_list = get_desktop_applications()
+        self.set_visible(not self.is_visible())
 
 
 if __name__ == "__main__":
