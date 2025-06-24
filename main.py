@@ -9,7 +9,7 @@ def apply_stylesheet(*_):
 
 
 if __name__ == "__main__":
-    style_monitor = monitor_file(get_relative_path("./styles/main.css"))
+    style_monitor = monitor_file(get_relative_path("styles"))
     style_monitor.connect("changed", apply_stylesheet)
 
     app_launcher = AppLauncher()

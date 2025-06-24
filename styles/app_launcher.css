@@ -1,0 +1,17 @@
+#app-launcher {
+    background-color: black;
+    border-radius: 10px;
+    font-size: 20px;
+}
+
+#app-launcher-search-entry {
+    padding: 5px;
+}
+
+#app-launcher-app-button:hover {
+    background-color: gray;
+}
+
+.selected {
+    background-color: gray;
+}

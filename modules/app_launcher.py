@@ -25,22 +25,25 @@ class AppLauncher(WaylandWindow):
             **kwargs,
         )
 
-        self._arranger_handler: int = 0
-        self._apps_list = get_desktop_applications()
+        self.arranger_handler: int = 0
+        self.apps_list = get_desktop_applications()
 
-        self.apps_wrapper = Box(orientation="vertical")
+        self.selected_index = -1
+
+        self.apps_wrapper = Box(
+            orientation="vertical",
+            on_key_press_event=self.on_key_press,
+        )
         self.search_entry = Entry(
             placeholder="Search for apps...",
             h_expand=True,
             name="app-launcher-search-entry",
             notify_text=lambda entry, *_: self.arrange_apps_wrapper(entry.get_text()),
-            on_key_press_event=self.on_key_press,
         )
         self.scrolled_window = ScrolledWindow(
             min_content_size=(600, 320),
             max_content_size=(280 * 2, 320),
             child=self.apps_wrapper,
-            name="app-launcher-scrolled-window",
         )
 
         self.add(
@@ -53,15 +56,14 @@ class AppLauncher(WaylandWindow):
             )
         )
 
-        self.show_all()
-
     def arrange_apps_wrapper(self, query: str = ""):
-        remove_handler(self._arranger_handler) if self._arranger_handler else None
+        remove_handler(self.arranger_handler) if self.arranger_handler else None
 
         self.apps_wrapper.children = []
+        self.selected_index = -1
 
         filtered_apps_iter = []
-        for app in self._apps_list:
+        for app in self.apps_list:
             app_names = [app.display_name, app.name, app.generic_name]
             if (
                 query.casefold()
@@ -69,7 +71,7 @@ class AppLauncher(WaylandWindow):
             ):
                 filtered_apps_iter.append(app)
 
-        self._arranger_handler = idle_add(
+        self.arranger_handler = idle_add(
             lambda *args: self.add_next_app(*args),
             iter(filtered_apps_iter),
             pin=True,
@@ -87,16 +89,58 @@ class AppLauncher(WaylandWindow):
     def create_app_slot(self, app: DesktopApp, **kwargs) -> Button:
         return Button(
             child=Label(label=app.display_name or "No name"),
+            style_classes="app-launcher-app-button",
             on_clicked=lambda *_: (app.launch(), self.toggle()),
             **kwargs,
         )
 
+    def change_selected_index(self, delta: int):
+        if children := self.apps_wrapper.get_children():
+            new_index = max(-1, min(self.selected_index + delta, len(children) - 1))
+            self.move_selection(new_index)
+
+    def move_selection(self, new_index: int):
+        current_button = self.apps_wrapper.get_children()[self.selected_index]
+        current_button.get_style_context().remove_class("selected")
+
+        self.selected_index = new_index
+
+        if self.selected_index > -1:
+            new_button = self.apps_wrapper.get_children()[self.selected_index]
+            new_button.get_style_context().add_class("selected")
+
+            self.scroll_to_selected(new_button)
+
+    def scroll_to_selected(self, button: Button):
+        scrolled_window_adjustment = self.scrolled_window.get_vadjustment()
+        button_allocation = button.get_allocation()
+
+        button_position = button_allocation.y
+        button_height = button_allocation.height
+        scrolled_window_height = scrolled_window_adjustment.get_page_size()
+        scrolled_window_delta = scrolled_window_adjustment.get_value()
+
+        visible_top = scrolled_window_delta
+        visible_bottom = scrolled_window_delta + scrolled_window_height
+
+        if button_position < visible_top:
+            scrolled_window_adjustment.set_value(button_position)
+        elif button_position + button_height > visible_bottom:
+            scrolled_window_adjustment.set_value(
+                button_position + button_height - scrolled_window_height
+            )
+
     def on_key_press(self, _, event):
-        if event.keyval == Gdk.KEY_Escape:
-            self.toggle()
+        match event.keyval:
+            case Gdk.KEY_Escape:
+                self.toggle()
+            case Gdk.KEY_Down:
+                self.change_selected_index(1)
+            case Gdk.KEY_Up:
+                self.change_selected_index(-1)
 
     def toggle(self):
-        self._apps_list = get_desktop_applications()
+        self.arrange_apps_wrapper()
         self.set_visible(not self.is_visible())
 
 
