@@ -140,7 +140,8 @@ class AppLauncher(WaylandWindow):
                 self.change_selected_index(-1)
 
     def toggle(self):
-        self.arrange_apps_wrapper()
+        self.search_entry.set_text("")
+        self.apps_list = get_desktop_applications()
         self.set_visible(not self.is_visible())
 
 
