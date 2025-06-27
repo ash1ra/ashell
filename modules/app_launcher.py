@@ -60,15 +60,11 @@ class AppLauncher(WaylandWindow):
         remove_handler(self.arranger_handler) if self.arranger_handler else None
 
         self.apps_wrapper.children = []
-        self.selected_index = -1
 
         filtered_apps_iter = []
         for app in self.apps_list:
             app_names = [app.display_name, app.name, app.generic_name]
-            if (
-                query.casefold()
-                in "".join(app_name for app_name in app_names if app_name).casefold()
-            ):
+            if query.casefold() in "".join(app_name for app_name in app_names if app_name).casefold():
                 filtered_apps_iter.append(app)
 
         self.arranger_handler = idle_add(
@@ -77,9 +73,12 @@ class AppLauncher(WaylandWindow):
             pin=True,
         )
 
-    def add_next_app(self, apps_iter: Iterator[DesktopApp]) -> None:
-        if app := next(apps_iter, None):
-            self.apps_wrapper.add(self.create_app_slot(app))
+    def add_next_app(self, apps_iter: Iterator[DesktopApp]) -> bool:
+        if not (app := next(apps_iter, None)):
+            return False
+
+        self.apps_wrapper.add(self.create_app_slot(app))
+        return True
 
     def create_app_slot(self, app: DesktopApp, **kwargs) -> Button:
         return Button(
@@ -121,9 +120,7 @@ class AppLauncher(WaylandWindow):
         if button_position < visible_top:
             scrolled_window_adjustment.set_value(button_position)
         elif button_position + button_height > visible_bottom:
-            scrolled_window_adjustment.set_value(
-                button_position + button_height - scrolled_window_height
-            )
+            scrolled_window_adjustment.set_value(button_position + button_height - scrolled_window_height)
 
     def on_key_press(self, _, event) -> None:
         match event.keyval:
@@ -136,6 +133,7 @@ class AppLauncher(WaylandWindow):
 
     def toggle(self) -> None:
         self.search_entry.set_text("")
+        self.selected_index = -1
         self.apps_list = get_desktop_applications()
         self.set_visible(not self.is_visible())
 
